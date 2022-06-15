@@ -113,17 +113,17 @@ fun sadPandaMessageListener(
             lines.mapToRegex(COMIC_URL_REGEX)
                 .map { SadPandaId(it.groupValues[1], it.groupValues[2]) }
                 .forEach { id ->
-                    delay(5.seconds)
                     markAsProcessing()
                     postComic(controller, id, config.dumpGuild)
+                    delay(5.seconds)
                 }
 
             lines.mapToRegex(PAGE_URL_REGEX)
                 .map { SadPandaId(it.groupValues[2], it.groupValues[1]) to it.groupValues[3].toInt() }
                 .forEach { (id, page) ->
-                    delay(5.seconds)
                     markAsProcessing()
                     postComicPage(controller, id, page)
+                    delay(5.seconds)
                 }
 
             message.deleteOwnReaction(Emojis.whiteCheckMark.toReaction())
