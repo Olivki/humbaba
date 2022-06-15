@@ -185,10 +185,7 @@ private fun UserMessageCreateBuilder.createSadPandaEmbed(comic: SadPandaComic, c
                 }
 
                 if (fancyTags.length > EmbedBuilder.Field.Limits.value) {
-                    val normalTags = tags.joinToString { (_, name, _) -> name }
-                    if (normalTags.length > EmbedBuilder.Field.Limits.value) {
-                        "${normalTags.substring(0, EmbedBuilder.Field.Limits.value - 2)}.."
-                    } else normalTags
+                    tags.joinToString { (_, name, _) -> name }.abbreviate(EmbedBuilder.Field.Limits.value)
                 } else fancyTags
             }
         }
