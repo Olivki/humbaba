@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "net.ormr.humbaba"
-version = "0.2.1"
+version = "0.2.2"
 
 kommando {
     version = "0.0.16"
