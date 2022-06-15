@@ -30,6 +30,7 @@ import dev.kord.x.emoji.Emojis
 import dev.kord.x.emoji.addReaction
 import dev.kord.x.emoji.toReaction
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -49,6 +50,7 @@ import net.ormr.kommando.commands.permissions.permission
 import net.ormr.kommando.processor.Tag
 import net.ormr.kommando.structures.eventListener
 import net.ormr.kommando.utils.respond
+import kotlin.time.Duration.Companion.seconds
 
 private val logger = InlineLogger()
 
@@ -101,13 +103,30 @@ fun sadPandaMessageListener(
         val lines = message.content.splitToSequence(WHITESPACE_REGEX)
 
         try {
+            var hasMarkedAsProcessing = false
+            suspend fun markAsProcessing() {
+                if (!hasMarkedAsProcessing) {
+                    message.addReaction(Emojis.whiteCheckMark)
+                    hasMarkedAsProcessing = true
+                }
+            }
             lines.mapToRegex(COMIC_URL_REGEX)
                 .map { SadPandaId(it.groupValues[1], it.groupValues[2]) }
-                .forEach { id -> postComic(controller, id, config.dumpGuild) }
+                .forEach { id ->
+                    delay(5.seconds)
+                    markAsProcessing()
+                    postComic(controller, id, config.dumpGuild)
+                }
 
             lines.mapToRegex(PAGE_URL_REGEX)
                 .map { SadPandaId(it.groupValues[2], it.groupValues[1]) to it.groupValues[3].toInt() }
-                .forEach { (id, page) -> postComicPage(controller, id, page) }
+                .forEach { (id, page) ->
+                    delay(5.seconds)
+                    markAsProcessing()
+                    postComicPage(controller, id, page)
+                }
+
+            message.deleteOwnReaction(Emojis.whiteCheckMark.toReaction())
         } catch (e: Exception) {
             message.addReaction(Emojis.x.toReaction())
             logger.error(e) { e.message }
@@ -125,10 +144,6 @@ context(KommandoAware, MessageCreateEvent)
     id: SadPandaId,
     dumpGuild: HumbabaConfig.DumpGuild,
 ): Job = kord.launch {
-    message.addReaction(Emojis.whiteCheckMark)
-
-    // 981238607723520070
-    // 981238607723520070
     val comic = controller.getComic(id)
 
     println(kord.guilds.map { it.id }.toList())
@@ -146,14 +161,10 @@ context(KommandoAware, MessageCreateEvent)
             repliedUser = true
         }
     }
-
-    message.deleteOwnReaction(Emojis.whiteCheckMark.toReaction())
 }
 
 context(KommandoAware, MessageCreateEvent)
         private fun postComicPage(controller: SadPandaController, id: SadPandaId, page: Int): Job = kord.launch {
-    message.addReaction(Emojis.whiteCheckMark)
-
     val imageContents = controller.getComicPageContents(id, page)
 
     message.reply {
@@ -163,8 +174,6 @@ context(KommandoAware, MessageCreateEvent)
             repliedUser = true
         }
     }
-
-    message.deleteOwnReaction(Emojis.whiteCheckMark.toReaction())
 }
 
 private fun UserMessageCreateBuilder.createSadPandaEmbed(comic: SadPandaComic, coverUrl: String) {
